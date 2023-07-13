@@ -1,10 +1,56 @@
 import os
 import platform
 import datetime
+import argparse
+import sys
+import time
+import subprocess
+import json
+import socket
+import math
+from typing import Final
 
 import psutil
 import cpuinfo
 from termcolor import colored, cprint
+
+
+PRINT_INFO: Final[bool] = False
+PRINT_JSON: Final[bool] = False
+
+
+def run(cmd):
+    try:
+        return subprocess.run(cmd, shell=True, capture_output=True, check=True, encoding="utf-8") \
+            .stdout \
+            .strip()
+    except:
+        return None
+
+
+def guid():
+    if sys.platform == 'darwin':
+        return run(
+            "ioreg -d2 -c IOPlatformExpertDevice | awk -F\\\" '/IOPlatformUUID/{print $(NF-1)}'",
+        )
+
+    if sys.platform == 'win32' or sys.platform == 'cygwin' or sys.platform == 'msys':
+        return run('wmic csproduct get uuid').split('\n')[2] \
+            .strip()
+
+    if sys.platform.startswith('linux'):
+        return run('cat /var/lib/dbus/machine-id') or \
+            run('cat /etc/machine-id')
+
+    if sys.platform.startswith('openbsd') or sys.platform.startswith('freebsd'):
+        return run('cat /etc/hostid') or \
+            run('kenv -q smbios.system.uuid')
+
+
+name = 'INVALID_NAME'
+ip = ''
+port = 0
+hwid = guid()
 
 battery_percent = 0
 battery_charging = False
@@ -162,8 +208,93 @@ def print_data():
     print('\n')
 
 
+def encode():
+    dictionary = {
+        "head/name": name,
+        "head/uuid": hwid,
+        "os/name": os_name,
+        "os/machine": os_machine,
+        "os/hostname": os_hostname,
+        "os/boottime": os_boot_time,
+        "cpu/model": cpu_model,
+        "cpu/arch": cpu_arch,
+        "cpu/frequency": cpu_freq,
+        "cpu/core-count": cpu_count,
+        "cpu/load-avg": cpu_load_avg,
+        "cpu/load-per-core": cpu_load_per_core,
+        "ram/total": ram_total,
+        "ram/free": ram_free,
+        "ram/swap-total": ram_swap_total,
+        "ram/swap-free": ram_swap_free,
+        "disk/mounts": disk_mounts,
+        "disk/total": disk_total,
+        "disk/free": disk_free,
+        "disk/r": disk_r,
+        "disk/w": disk_w,
+        "net/r": net_r,
+        "net/w": net_w,
+        "sns/battery": battery_percent,
+        "sns/bat-cs": battery_charging,
+        "sns/temp": temperatures,
+        "sns/fans": fans,
+        "proc/ttl": process_info,
+        "proc/ls": process_list
+    }
+
+    encoded = json.dumps(dictionary)
+    with open("your_file.json", "w") as write_file:
+        json.dump(dictionary, write_file)
+    if PRINT_JSON:
+        print(encoded)
+    return encoded
+
+
+def progress(x):
+    if x == 0:
+        print('-')
+    if x == 1:
+        print('/')
+    if x == 2:
+        print('|')
+    if x == 3:
+        print('\\')
+
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='MSM Agent for workstation')
+    parser.add_argument('name', type=str, help='Unique name for agent instance')
+    parser.add_argument('ip', type=str, help='Target IPv4-address')
+    parser.add_argument('port', type=int, help='Target port')
+    args = parser.parse_args()
+    name = args.name
+    ip = args.ip
+    port = args.port
+
+    print(f'Agent name: {name}')
+    print(f'Target address: {ip}:{port}')
+    print(f'Unique HWID: {hwid}')
+
+    time.sleep(1)
+
+    i = 0
     while True:
         fetch_data()
         os.system('cls' if os.name == 'nt' else 'clear')
-        print_data()
+        if PRINT_INFO:
+            print_data()
+        e = encode()
+        if i < 3:
+            i += 1
+        else:
+            i = 0
+        progress(i)
+
+        try:
+            s.sendto(e.encode('utf-8'), (ip, port))
+            #msgFromServer = s.recvfrom(65535)
+            #msg = "Message from Server {}".format(msgFromServer[0])
+            #print(msg)
+        except ConnectionRefusedError:
+            print('Exception:', ConnectionRefusedError)
