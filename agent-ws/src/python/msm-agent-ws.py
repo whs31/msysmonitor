@@ -15,7 +15,8 @@ import cpuinfo
 from termcolor import colored, cprint
 
 
-PRINT_INFO: Final[bool] = False
+PRINT_INFO: Final[bool] = True
+PRINT_PROC: Final[bool] = False
 PRINT_JSON: Final[bool] = False
 
 
@@ -197,14 +198,17 @@ def print_data():
 
     cprint("☰ SENSORS                                                                                   ",
            "white", "on_red", attrs=["bold", "underline"])
-    print(f'Temperatures:\t\t {temperatures}')
+    print(f'Temperatures:\t\t')
+    for a in temperatures:
+        print(f'\t\t\t {a}')
     print(f'Fans:\t\t\t {fans}')
     print('\n')
 
     cprint("☰ PROCESSES                                                                                 ",
            "black", "on_white", attrs=["bold", "underline"])
     print(f'Running processes:\t {process_info} processes')
-    print(f'Process list:\t\t {process_list}')
+    if PRINT_PROC:
+        print(f'Process list:\t\t {process_list}')
     print('\n')
 
 
@@ -242,8 +246,6 @@ def encode():
     }
 
     encoded = json.dumps(dictionary)
-    with open("your_file.json", "w") as write_file:
-        json.dump(dictionary, write_file)
     if PRINT_JSON:
         print(encoded)
     return encoded
