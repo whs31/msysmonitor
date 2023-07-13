@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 psutil = "*"
 termcolor = "*"
+py-cpuinfo = "*"
 
 [dev-packages]
 
