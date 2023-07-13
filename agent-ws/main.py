@@ -23,6 +23,11 @@ cpu_count = psutil.cpu_count()
 cpu_load_avg = 0
 cpu_load_per_core = 0
 
+ram_total = 0
+ram_free = 0
+ram_swap_total = 0
+ram_swap_free = 0
+
 
 def fetch_data():
     global battery_percent
@@ -30,6 +35,10 @@ def fetch_data():
     global os_boot_time
     global cpu_load_avg
     global cpu_load_per_core
+    global ram_total
+    global ram_free
+    global ram_swap_total
+    global ram_swap_free
 
     battery_percent = psutil.sensors_battery().percent
     battery_charging = psutil.sensors_battery().power_plugged
@@ -38,6 +47,11 @@ def fetch_data():
 
     cpu_load_avg = psutil.cpu_percent(interval=0.5, percpu=False)
     cpu_load_per_core = psutil.cpu_percent(interval=0.5, percpu=True)
+
+    ram_total = psutil.virtual_memory()[0]
+    ram_free = psutil.virtual_memory()[1]
+    ram_swap_total = psutil.swap_memory().total
+    ram_swap_free = psutil.swap_memory().free
 
 
 def print_data():
@@ -65,6 +79,18 @@ def print_data():
     print(f'Load per core:\t {cpu_load_per_core}')
     print('\n')
 
+    cprint("☰ MEMORY                                                           ", "white", "on_yellow", attrs=["bold", "underline"])
+    print(f'RAM:\t\t {ram_free / 1024000000} GB out of {ram_total / 1024000000} GB')
+    print(f'\t\t {100 - ram_free / ram_total * 100}% loaded')
+    print(f'Swap file:\t {ram_swap_free / 1024000000} GB out of {ram_swap_total / 1024000000} GB')
+    print(f'\t\t {100 - ram_swap_free / ram_swap_total * 100}% loaded')
+    print('\n')
+
+    cprint("☰ DISK                                                             ", "white", "on_green", attrs=["bold", "underline"])
+    print('\n')
+
+    cprint("☰ NETWORK                                                          ", "white", "on_magenta", attrs=["bold", "underline"])
+    print('\n')
 
 if __name__ == '__main__':
     while True:
