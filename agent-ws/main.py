@@ -1,5 +1,4 @@
 import os
-import time
 import platform
 import datetime
 
@@ -28,6 +27,18 @@ ram_free = 0
 ram_swap_total = 0
 ram_swap_free = 0
 
+disk_mounts = 0
+disk_total = 0
+disk_free = 0
+disk_r = 0
+disk_w = 0
+
+net_r = 0
+net_w = 0
+
+temperatures = 0
+fans = 0
+
 
 def fetch_data():
     global battery_percent
@@ -39,6 +50,15 @@ def fetch_data():
     global ram_free
     global ram_swap_total
     global ram_swap_free
+    global disk_mounts
+    global disk_total
+    global disk_free
+    global disk_r
+    global disk_w
+    global net_r
+    global net_w
+    global temperatures
+    global fans
 
     battery_percent = psutil.sensors_battery().percent
     battery_charging = psutil.sensors_battery().power_plugged
@@ -53,9 +73,26 @@ def fetch_data():
     ram_swap_total = psutil.swap_memory().total
     ram_swap_free = psutil.swap_memory().free
 
+    p_mounts = psutil.disk_partitions(all=False)
+    p_mounts_clean = []
+    for mount in p_mounts:
+        p_mounts_clean.append(mount.device)
+    disk_mounts = p_mounts_clean
+    disk_total = psutil.disk_usage('/').total
+    disk_free = psutil.disk_usage('/').free
+    disk_r = psutil.disk_io_counters(nowrap=False).read_bytes
+    disk_w = psutil.disk_io_counters(nowrap=False).write_bytes
+
+    net_r = psutil.net_io_counters(nowrap=False).bytes_recv
+    net_w = psutil.net_io_counters(nowrap=False).bytes_sent
+
+    temperatures = psutil.sensors_temperatures()
+    fans = psutil.sensors_fans()
+
 
 def print_data():
-    cprint("🖳 SYSTEM INFO                                                      ", "black", "on_light_grey", attrs=["bold", "underline"])
+    cprint("🖳 SYSTEM INFO                                                      ", "black", "on_light_grey",
+           attrs=["bold", "underline"])
     uptime = datetime.datetime.now() - datetime.datetime.fromtimestamp(os_boot_time)
     print(f'OS:\t\t {os_name}')
     print(f'Architecture:\t {os_machine}')
@@ -64,12 +101,14 @@ def print_data():
     print(f'Uptime:\t\t {uptime}')
     print('\n')
 
-    cprint("🗠 SYSTEM STATUS                                                    ", "white", "on_dark_grey", attrs=["bold", "underline"])
+    cprint("🗠 SYSTEM STATUS                                                    ", "white", "on_dark_grey",
+           attrs=["bold", "underline"])
     charge_status = 'charging' if battery_charging else 'discharging'
     print(f'🗲 Battery:\t {battery_percent}%, {charge_status}')
     print('\n')
 
-    cprint("☰ CPU                                                              ", "white", "on_blue", attrs=["bold", "underline"])
+    cprint("☰ CPU                                                              ", "white", "on_blue",
+           attrs=["bold", "underline"])
     print(f'Model:\t\t {cpu_model}')
     print(f'Architecture:\t {cpu_arch}')
     print(f'Frequency:\t {cpu_freq}')
@@ -79,18 +118,33 @@ def print_data():
     print(f'Load per core:\t {cpu_load_per_core}')
     print('\n')
 
-    cprint("☰ MEMORY                                                           ", "white", "on_yellow", attrs=["bold", "underline"])
-    print(f'RAM:\t\t {ram_free / 1024000000} GB out of {ram_total / 1024000000} GB')
+    cprint("☰ MEMORY                                                           ", "white", "on_yellow",
+           attrs=["bold", "underline"])
+    print(f'RAM:\t\t {ram_free / 1024000000} GB free out of {ram_total / 1024000000} GB')
     print(f'\t\t {100 - ram_free / ram_total * 100}% loaded')
-    print(f'Swap file:\t {ram_swap_free / 1024000000} GB out of {ram_swap_total / 1024000000} GB')
+    print(f'Swap file:\t {ram_swap_free / 1024000000} GB free out of {ram_swap_total / 1024000000} GB')
     print(f'\t\t {100 - ram_swap_free / ram_swap_total * 100}% loaded')
     print('\n')
 
-    cprint("☰ DISK                                                             ", "white", "on_green", attrs=["bold", "underline"])
+    cprint("☰ DISK                                                             ", "white", "on_green",
+           attrs=["bold", "underline"])
+    print(f'Mounts:\t\t {disk_mounts}')
+    print(f'Disk usage:\t {disk_free / 1024000000} GB free out of {disk_total / 1024000000} GB')
+    print(f'\t\t {100 - disk_free / disk_total * 100}% loaded')
+    print(f'R/W load:\t {disk_r / 1024} KB R / {disk_w / 1024} KB W')
     print('\n')
 
-    cprint("☰ NETWORK                                                          ", "white", "on_magenta", attrs=["bold", "underline"])
+    cprint("☰ NETWORK                                                          ", "white", "on_magenta",
+           attrs=["bold", "underline"])
+    print(f'R/W load:\t {net_r / 1024} KB Rcv / {net_w / 1024} KB Sent')
     print('\n')
+
+    cprint("☰ SENSORS                                                          ", "white", "on_red",
+           attrs=["bold", "underline"])
+    print(f'Temperatures:\t {temperatures}')
+    print(f'Fans:\t\t {fans}')
+    print('\n')
+
 
 if __name__ == '__main__':
     while True:
@@ -98,5 +152,4 @@ if __name__ == '__main__':
         os.system('cls' if os.name == 'nt' else 'clear')
         print_data()
 
-        #time.sleep(1)
-
+        # time.sleep(1)
