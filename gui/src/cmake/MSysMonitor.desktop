@@ -1,0 +1,5 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=MSysMonitor
+Exec=/opt/MSysMonitor/MSysMonitor
