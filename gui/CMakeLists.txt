@@ -35,8 +35,8 @@ set(PROJECT_SOURCES
   src/c++/main.c++
   src/c++/m_sys_monitor.h    src/c++/m_sys_monitor.c++
 
-  #src/qml/qml.qrc
-  #resources/resources.qrc
+  src/qml/qml.qrc
+  resources/resources.qrc
 )
 
 add_executable(${PROJECT_NAME}
